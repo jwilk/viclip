@@ -5,10 +5,28 @@
 
 set -e -u
 
+ends_with_nl()
+{
+    if [ -s "$1" ] && [ -z "$(tail -c 1 "$1")" ]
+    then
+        return 0
+    fi
+    return 1
+}
+
 tmpdir=$(mktemp -d -t viclip.XXXXXX)
 tmpfile=$tmpdir/clipboard
 xclip -o -selection clipboard > "$tmpfile"
+nl=''
+if ends_with_nl "$tmpfile"
+then
+    nl=yes
+fi
 ${VISUAL:-${EDITOR:-editor}} "$tmpfile"
+if [ -z "$nl" ] && ends_with_nl "$tmpfile"
+then
+    truncate -s -1 "$tmpfile"
+fi
 xclip -i -selection clipboard < "$tmpfile"
 rm -rf "$tmpdir"
 
